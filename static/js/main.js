@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DOM Elements
     const refreshBtn = document.getElementById('refresh-btn');
+    const exportCsvBtn = document.getElementById('export-csv-btn');
     const searchInput = document.getElementById('search-input');
     const filterButtons = document.querySelectorAll('.filter-btn');
     const feedContainer = document.getElementById('feed-container');
@@ -27,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event Listeners
     refreshBtn.addEventListener('click', fetchReleases);
+    exportCsvBtn.addEventListener('click', exportToCSV);
     searchInput.addEventListener('input', handleSearch);
     
     filterButtons.forEach(btn => {
@@ -208,20 +210,50 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${update.content}
                         </div>
                         <div class="card-actions">
-                            <button class="btn-text">
+                            <button class="btn-text btn-copy" title="Copy to Clipboard">
+                                <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                                <span>Copy</span>
+                            </button>
+                            <button class="btn-text btn-tweet" title="Load into X/Twitter Composer">
                                 <svg viewBox="0 0 24 24"><path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.7 0-1.37-.2-1.95-.54v.05c0 2.08 1.48 3.82 3.44 4.21-.36.1-.74.15-1.13.15-.27 0-.54-.03-.8-.08.54 1.7 2.13 2.93 4.01 2.97-1.47 1.15-3.32 1.84-5.32 1.84-.35 0-.69-.02-1.03-.06 1.9 1.22 4.16 1.93 6.59 1.93 7.9 0 12.22-6.54 12.22-12.22 0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/></svg>
                                 Compose Tweet
                             </button>
                         </div>
                     `;
 
-                    // Handle card click
+                    // Handle card click (selects card)
                     card.addEventListener('click', () => {
                         selectUpdate(update);
-                        
-                        // Highlight card in list
                         document.querySelectorAll('.update-card').forEach(c => c.classList.remove('selected'));
                         card.classList.add('selected');
+                    });
+
+                    // Direct Copy action
+                    const copyBtn = card.querySelector('.btn-copy');
+                    copyBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(update.clean_text).then(() => {
+                            const label = copyBtn.querySelector('span');
+                            const originalText = label.textContent;
+                            label.textContent = 'Copied!';
+                            copyBtn.classList.add('success');
+                            setTimeout(() => {
+                                label.textContent = originalText;
+                                copyBtn.classList.remove('success');
+                            }, 2000);
+                        }).catch(err => {
+                            console.error('Failed to copy: ', err);
+                        });
+                    });
+
+                    // Direct Tweet selection action
+                    const tweetBtnOnCard = card.querySelector('.btn-tweet');
+                    tweetBtnOnCard.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selectUpdate(update);
+                        document.querySelectorAll('.update-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        tweetTextarea.focus();
                     });
 
                     dateGroup.appendChild(card);
@@ -311,5 +343,53 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
             window.open(url, '_blank');
         }, 800);
+    }
+
+    function exportToCSV() {
+        if (!releaseData || !releaseData.entries) return;
+
+        let csvRows = [];
+        // Header Row
+        csvRows.push(['Date', 'Category', 'Update Content', 'Tweet Text'].map(val => `"${val.replace(/"/g, '""')}"`).join(','));
+
+        // Compile matched rows
+        releaseData.entries.forEach(entry => {
+            entry.updates.forEach(update => {
+                const matchesType = (activeFilter === 'all' || update.type.toLowerCase() === activeFilter);
+                const matchesSearch = (
+                    update.clean_text.toLowerCase().includes(searchQuery) ||
+                    update.type.toLowerCase().includes(searchQuery) ||
+                    entry.date.toLowerCase().includes(searchQuery)
+                );
+                
+                if (matchesType && matchesSearch) {
+                    const row = [
+                        entry.date,
+                        update.type,
+                        update.clean_text,
+                        update.tweet_text
+                    ];
+                    csvRows.push(row.map(val => `"${val.replace(/"/g, '""')}"`).join(','));
+                }
+            });
+        });
+
+        if (csvRows.length <= 1) {
+            alert('No data available in current view to export!');
+            return;
+        }
+
+        const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        
+        const timestamp = new Date().toISOString().slice(0, 10);
+        const filename = `bigquery_release_notes_${activeFilter}_${timestamp}.csv`;
+        link.setAttribute("download", filename);
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 });

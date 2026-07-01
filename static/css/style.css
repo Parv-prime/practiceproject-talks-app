@@ -504,6 +504,7 @@ header::after {
 .card-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 1rem;
   border-top: 1px solid var(--border-color);
   padding-top: 0.75rem;
   margin-top: 0.5rem;
@@ -525,6 +526,10 @@ header::after {
 
 .btn-text:hover {
   color: var(--color-blue);
+}
+
+.btn-text.success {
+  color: var(--color-green) !important;
 }
 
 .btn-text svg {
