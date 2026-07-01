@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A premium tracker for BigQuery Release Notes. Fetch, read, search, and Tweet release notes in real time.">
+  <title>BigQuery Release Notes Explorer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/google-cloud.png">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header>
+      <div class="logo-section">
+        <div class="logo-icon">
+          <!-- Custom SVGs representing Cloud Database/BigQuery -->
+          <svg viewBox="0 0 24 24">
+            <path d="M19 12v7H5v-7h14m1-2H4c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-8c0-.55-.45-1-1-1zM5 13h4v3H5zm6 0h8v3h-8zm-6 5v-7h14v7H5zm6-5h8v3h-8zm-6 0h4v3H5z"/>
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.4z"/>
+          </svg>
+        </div>
+        <div class="logo-title">
+          <h1>BigQuery Pulse</h1>
+          <p>Google Cloud Release Explorer</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="feed-status" id="feed-status-text">
+          Feed status: <span>Connecting...</span>
+        </div>
+        <button class="btn-icon" id="refresh-btn" title="Refresh Release Notes">
+          <svg viewBox="0 0 24 24">
+            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Warning Banner -->
+    <div class="warning-banner" id="warning-banner" style="display: none;">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+      </svg>
+      <span id="warning-text">Failed to fetch the latest feeds. Showing cached results.</span>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+      
+      <!-- Left Sidebar (Filters) -->
+      <aside class="sidebar-left">
+        <div class="panel">
+          <h2 class="panel-title">
+            <svg style="width:18px;height:18px;fill:currentColor;" viewBox="0 0 24 24">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            Search Notes
+          </h2>
+          <div class="search-container">
+            <svg class="search-icon" viewBox="0 0 24 24">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            <input type="text" id="search-input" class="search-input" placeholder="Type keywords, dates...">
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">
+            <svg style="width:18px;height:18px;fill:currentColor;" viewBox="0 0 24 24">
+              <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+            </svg>
+            Categories
+          </h2>
+          <div class="filter-list">
+            <button class="filter-btn active" data-filter="all">
+              <span>All Updates</span>
+              <span class="badge-count">-</span>
+            </button>
+            <button class="filter-btn" data-filter="feature">
+              <span>Features</span>
+              <span class="badge-count">-</span>
+            </button>
+            <button class="filter-btn" data-filter="change">
+              <span>Changes</span>
+              <span class="badge-count">-</span>
+            </button>
+            <button class="filter-btn" data-filter="announcement">
+              <span>Announcements</span>
+              <span class="badge-count">-</span>
+            </button>
+            <button class="filter-btn" data-filter="breaking">
+              <span>Breaking Updates</span>
+              <span class="badge-count">-</span>
+            </button>
+            <button class="filter-btn" data-filter="issue">
+              <span>Known Issues</span>
+              <span class="badge-count">-</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center Feed (Release cards) -->
+      <main class="feed-content" id="feed-container">
+        <!-- Injected via JavaScript -->
+        <div class="loader-container">
+          <div class="main-spinner"></div>
+          <p>Fetching BigQuery release notes...</p>
+        </div>
+      </main>
+
+      <!-- Right Sidebar (Tweet Composer) -->
+      <aside class="sidebar-right">
+        
+        <div class="tweet-composer" id="composer-box">
+          <div class="tweet-header">
+            <div class="user-avatar">
+              <div class="user-avatar-inner">
+                <!-- Custom micro Google Cloud/Database Logo -->
+                <svg viewBox="0 0 24 24">
+                  <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/>
+                </svg>
+              </div>
+            </div>
+            <div class="user-info">
+              <span class="user-name">BigQuery Pulse Bot</span>
+              <span class="user-handle">@bq_insights</span>
+            </div>
+          </div>
+
+          <div class="tweet-textarea-wrapper">
+            <textarea id="tweet-textarea" class="tweet-textarea" readonly placeholder="Select any BigQuery update card to load its details and compose a tweet about it here."></textarea>
+            <div class="tweet-char-counter" id="char-counter">0/280</div>
+          </div>
+
+          <div class="tweet-footer">
+            <div class="composer-tip" title="You can edit the text before posting!">
+              <svg viewBox="0 0 24 24">
+                <path d="M11 9h2V7h-2v2zm0 8h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+              </svg>
+              <span>Fully Editable</span>
+            </div>
+            
+            <button class="tweet-btn-main" id="tweet-btn" disabled>
+              <svg id="bird-icon" viewBox="0 0 24 24">
+                <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.7 0-1.37-.2-1.95-.54v.05c0 2.08 1.48 3.82 3.44 4.21-.36.1-.74.15-1.13.15-.27 0-.54-.03-.8-.08.54 1.7 2.13 2.93 4.01 2.97-1.47 1.15-3.32 1.84-5.32 1.84-.35 0-.69-.02-1.03-.06 1.9 1.22 4.16 1.93 6.59 1.93 7.9 0 12.22-6.54 12.22-12.22 0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
+              </svg>
+              <span>Tweet on X</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel" style="background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.15);">
+          <h2 class="panel-title" style="color: var(--color-blue);">
+            <svg style="width:18px;height:18px;fill:currentColor;" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+            </svg>
+            Quick Instructions
+          </h2>
+          <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);">
+            1. Click on any release card in the center feed.<br>
+            2. The Tweet Composer will auto-generate a structured tweet containing the release details.<br>
+            3. Customize the text to your liking (keep within 280 characters).<br>
+            4. Click <strong>Tweet on X</strong> to post it!
+          </p>
+        </div>
+
+      </aside>
+
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p>BigQuery Release Notes Explorer &copy; 2026. Data sourced directly from Google Cloud Platform.</p>
+      <p>Developed with ❤️ using Flask & Vanilla Web Technologies.</p>
+    </footer>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
